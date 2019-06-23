@@ -2,6 +2,7 @@
 #include <SDL2/SDL.h>
 
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include <string>
 #include <iostream>
@@ -51,7 +52,7 @@ bool m_keys[NUM_KEYS], m_mouse[NUM_MOUSE];
 float frameTime;
 double xlast;
 
-glm::fvec2 pos, dir, plane;
+glm::fvec3 pos, dir, plane;
 
 struct Mouse
 {
@@ -84,7 +85,7 @@ int main(int argc, char* argv[])
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
 	// Create window
-	window = SDL_CreateWindow("Ray Caster OpenGL", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, W_WIDTH, W_HEIGHT, SDL_WINDOW_OPENGL);
+	window = SDL_CreateWindow("Voxel Ray Tracer", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, W_WIDTH, W_HEIGHT, SDL_WINDOW_OPENGL);
 	glContext = SDL_GL_CreateContext(window);
 
 	// Capture mouse
@@ -102,9 +103,10 @@ int main(int argc, char* argv[])
 
 	// ========== RAY CASTING SETUP ==========
 
-	pos = { 22, 13.5 };
-	dir = { -1, 0 };
-	plane = { 0, 0.66 };
+	pos = { 3, 0, 3 };
+	dir = { 0, 0, -1 };
+
+	float fov = M_PI / 2.f;
 
 	double time = 0; //time of current frame
 	double oldTime = 0; //time of previous frame
@@ -115,13 +117,16 @@ int main(int argc, char* argv[])
 	CompileShaders("./shader.vert", "./shader.frag");
 
 	// Uniforms
-	int uniform_dir = glGetUniformLocation(shaderID, "dir");
-	int uniform_plane = glGetUniformLocation(shaderID, "plane");
+	int uniform_w_size = glGetUniformLocation(shaderID, "w_size");
+	int uniform_fov = glGetUniformLocation(shaderID, "fov");
+	int uniform_worldmap = glGetUniformLocation(shaderID, "world_map");
 	int uniform_pos = glGetUniformLocation(shaderID, "pos");
-	int uniform_worldmap = glGetUniformLocation(shaderID, "worldmap");
 
 	// Set static uniforms
 	glUseProgram(shaderID);
+	glUniform2i(uniform_w_size, W_WIDTH, W_HEIGHT);
+	glUniform1f(uniform_fov, fov);
+	glUniform1iv(uniform_worldmap, sizeof(worldMap), worldMap);
 
 	// ========== VERTEX SETUP ==========
 
@@ -191,12 +196,12 @@ int main(int argc, char* argv[])
 			case SDL_MOUSEMOTION:
 
 			{
-				double delta = -1 * double(event.motion.xrel) * frameTime * ROTSPEED;
+				//double delta = -1 * double(event.motion.xrel) * frameTime * ROTSPEED;
 
-				// Rotate 90 degrees
-				glm::dmat2 rotation = { glm::dvec2(cos(delta), -sin(delta)), glm::dvec2(sin(delta), cos(delta)) };
-				dir = dir * rotation;
-				plane = plane * rotation;
+				//// Rotate 90 degrees
+				//glm::dmat2 rotation = { glm::dvec2(cos(delta), -sin(delta)), glm::dvec2(sin(delta), cos(delta)) };
+				//dir = dir * rotation;
+				//plane = plane * rotation;
 			}
 			break;
 			case SDL_QUIT:
@@ -211,7 +216,7 @@ int main(int argc, char* argv[])
 			quit = true;
 
 		// Normalize if simultaneous perpendicular inputs
-		double multiplier = MOVESPEED;
+		float multiplier = MOVESPEED;
 		if (m_keys[SDLK_w] || m_keys[SDLK_s])
 		{
 			if (m_keys[SDLK_a] || m_keys[SDLK_d])
@@ -224,34 +229,46 @@ int main(int argc, char* argv[])
 
 		if (m_keys[SDLK_w])
 		{
-			if (worldMap[int(pos.x + dir.x * multiplier) + int(pos.y) * MAP_WIDTH] == false) pos.x += dir.x * multiplier;
-			if (worldMap[int(pos.x) + int(pos.y + dir.y * multiplier) * MAP_WIDTH] == false) pos.y += dir.y * multiplier;
+			pos += dir * multiplier;
+
+			//if (worldMap[int(pos.x + dir.x * multiplier) + int(pos.y) * MAP_WIDTH] == false) pos.x += dir.x * multiplier;
+			//if (worldMap[int(pos.x) + int(pos.y + dir.y * multiplier) * MAP_WIDTH] == false) pos.y += dir.y * multiplier;
 		}
 		else if (m_keys[SDLK_s])
 		{
-			if (worldMap[int(pos.x - dir.x * multiplier) + int(pos.y) * MAP_WIDTH] == false) pos.x -= dir.x * multiplier;
-			if (worldMap[int(pos.x) + int(pos.y - dir.y * multiplier) * MAP_WIDTH] == false) pos.y -= dir.y * multiplier;
+			pos -= dir * multiplier;
+
+			//if (worldMap[int(pos.x - dir.x * multiplier) + int(pos.y) * MAP_WIDTH] == false) pos.x -= dir.x * multiplier;
+			//if (worldMap[int(pos.x) + int(pos.y - dir.y * multiplier) * MAP_WIDTH] == false) pos.y -= dir.y * multiplier;
 		}
 		if (m_keys[SDLK_a])
 		{
-			// Apply transformation as if moving forwards
-			if (worldMap[int(pos.x - dir.y * multiplier) + int(pos.y) * MAP_WIDTH] == false) pos.x -= dir.y * multiplier;
-			if (worldMap[int(pos.x) + int(pos.y + dir.x * multiplier) * MAP_WIDTH] == false) pos.y += dir.x * multiplier;
+			glm::vec3 perp = glm::cross(dir, glm::vec3(0, 1, 0));
+
+			pos -= perp * multiplier;
+
+			//// Apply transformation as if moving forwards
+			//if (worldMap[int(pos.x - dir.y * multiplier) + int(pos.y) * MAP_WIDTH] == false) pos.x -= dir.y * multiplier;
+			//if (worldMap[int(pos.x) + int(pos.y + dir.x * multiplier) * MAP_WIDTH] == false) pos.y += dir.x * multiplier;
 		}
 		else if (m_keys[SDLK_d])
 		{
-			// Apply transformation as if moving forwards
-			if (worldMap[int(pos.x + dir.y * multiplier) + int(pos.y) * MAP_WIDTH] == false) pos.x += dir.y * multiplier;
-			if (worldMap[int(pos.x) + int(pos.y - dir.x * multiplier) * MAP_WIDTH] == false) pos.y -= dir.x * multiplier;
+			glm::vec3 perp = glm::cross(dir, glm::vec3(0, 1, 0));
+
+			pos += perp * multiplier;
+
+			//// Apply transformation as if moving forwards
+			//if (worldMap[int(pos.x + dir.y * multiplier) + int(pos.y) * MAP_WIDTH] == false) pos.x += dir.y * multiplier;
+			//if (worldMap[int(pos.x) + int(pos.y - dir.x * multiplier) * MAP_WIDTH] == false) pos.y -= dir.x * multiplier;
 		}
 
 		// Activate shader and render
 		glUseProgram(shaderID);
 
 		// Pass dynamic uniforms
-		glUniform2f(uniform_pos, pos.x, pos.y);
-		glUniform2f(uniform_dir, dir.x, dir.y);
-		glUniform2f(uniform_plane, plane.x, plane.y);
+		glUniform3f(uniform_pos, pos.x, pos.y, pos.z);
+		//glUniform2f(uniform_dir, dir.x, dir.y);
+		//glUniform2f(uniform_plane, plane.x, plane.y);
 
 		glBindVertexArray(VAO);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
