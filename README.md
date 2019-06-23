@@ -3,12 +3,12 @@ Basic, fully ray traced realtime voxel rendering engine using OpenGL shaders. Th
 
 ## Images (most recent first)
 
-**Images below use digital differential analysis (DDA) for ray tracing**
+``Images below use digital differential analysis (DDA) for ray tracing``
 
 ### DDA Ray Tracing (with per voxel diffuse lighting)
 ![DDA with per voxel lighting](https://raw.githubusercontent.com/armytricks/RayTracingEngine/master/scr_diffuse_pervoxel_untextured.png)
 
-**Images below use an incremented scalar for ray tracing**
+``Images below use an incremented scalar for ray tracing``
 
 ### Diffuse lighting
 ![Diffuse lighting](https://raw.githubusercontent.com/armytricks/RayTracingEngine/master/scr_diffuse_untextured.png)
