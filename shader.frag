@@ -19,6 +19,13 @@ struct Light {
     float intensity;
 };
 
+struct Material {
+	float specular;
+	float diffuse;
+	float ambient;
+	float shine;
+};
+
 layout(std430, binding = 3) buffer dataLayout
 {
      uint world_map[];
@@ -50,8 +57,11 @@ vec3 cast_ray(const vec3 origin, const vec3 dir)
 		if (tile > 0)
 		{
 			Light l1 = Light(vec3(8, 3, 8), 0.1);
+
 			vec3 light_dir = normalize(l1.position - map);
 			float diffuse_intensity = l1.intensity * max(0.f, dot(light_dir,map));
+			float ambient_intensity = 0.1f;
+			float specular_intensity = 0.5f;
 
 			dist = length(map - origin);
 			vec3 col;
@@ -89,7 +99,7 @@ vec3 cast_ray(const vec3 origin, const vec3 dir)
 				break;
 			}
 
-			return col * diffuse_intensity;
+			return col * (diffuse_intensity + ambient_intensity);
 		}
 
 		if (result.y >= MAP_DEPTH || result.z >= MAP_WIDTH || result.x >= MAP_HEIGHT)
