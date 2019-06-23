@@ -2,32 +2,91 @@
 
 #define FLT_MAX 3.402823466e+38
 
-#define MAP_WIDTH 5
-#define MAP_HEIGHT 5
-#define MAP_DEPTH 3
+#define MAP_WIDTH 24
+#define MAP_HEIGHT 24
+#define MAP_DEPTH 4
 
 in vec4 gl_FragCoord;
 out vec4 pxColour;
 
 uniform ivec2 w_size;
 uniform float fov;
-uniform int world_map[MAP_WIDTH * MAP_HEIGHT * MAP_DEPTH];
+//uniform int world_map[MAP_WIDTH * MAP_HEIGHT * MAP_DEPTH];
 uniform vec3 pos;
+uniform vec2 theta;
+
+layout(std430, binding = 3) buffer dataLayout
+{
+     uint world_map[];
+};
+
+mat3 rotationMatrix(vec3 axis, float angle)
+{
+    axis = normalize(axis);
+    float s = sin(angle);
+    float c = cos(angle);
+    float oc = 1.0 - c;
+    
+    return mat3(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,
+                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,
+				oc * axis.z * axis.x - axis.y * s, oc * axis.y * axis.z + axis.x * s, oc * axis.z * axis.z + c);
+}
 
 vec3 cast_ray(const vec3 origin, const vec3 dir)
 {
 	float dist = FLT_MAX;
 	float t = 0.f; // Vector equation scalar
 
+//	vec3 dir_result = cross(dir, vec3(0, 1, 0));
+
 	while (true)
 	{
 		vec3 map = origin + t * dir;
 		ivec3 result = ivec3(map);
 
-		if (world_map[result.y * MAP_WIDTH * MAP_HEIGHT + result.z * MAP_WIDTH + result.x] > 0)
+		uint tile = world_map[result.y * MAP_WIDTH * MAP_HEIGHT + result.z * MAP_WIDTH + result.x];
+		if (tile > 0)
 		{
+//			float lambda = (map.x + origin.y * dir_result.x - map.y * dir_result.x - dir_result.y * origin.x) / (dir.x * dir_result.y - dir.y * dir_result.x);
+//			vec3 perp_interset = origin + lambda * dir;
+//			dist = length(perp_interset - origin);
 			dist = length(map - origin);
-			return vec3(1, 0.5, 1) * 1 / dist;
+			vec3 col;
+			switch(tile)
+			{
+			case 1:
+				col = vec3(1, 0.5, 1);
+				break;
+			case 2:
+				col = vec3(1, 1, 1);
+				break;
+			case 3:
+				col = vec3(0.5, 1, 1);
+				break;
+			case 4:
+				col = vec3(0.25, 0.75, 0.5);
+				break;
+			case 5:
+				col = vec3(0.75, 0.25, 0.5);
+				break;
+			case 6:
+				col = vec3(0.5, 0.75, 0.25);
+				break;
+			case 7:
+				col = vec3(0.5, 0.25, 0.75);
+				break;
+			case 8:
+				col = vec3(0.8, 0.1, 0.6);
+				break;
+			case 9:
+				col = vec3(0.1, 0.8, 0.6);
+				break;
+			default:
+				col = vec3(1, 1, 0.5);
+				break;
+			}
+
+			return col / dist;
 		}
 
 		if (result.y >= MAP_DEPTH || result.z >= MAP_WIDTH || result.x >= MAP_HEIGHT)
@@ -48,7 +107,8 @@ void main()
     float x =  (2*(gl_FragCoord.x + 0.5)/float(w_size.x)  - 1)*tan(fov/2.)*w_size.x/float(w_size.y);
     float y = (2*(gl_FragCoord.y + 0.5)/float(w_size.y) - 1)*tan(fov/2.);
 
-	vec3 dir = normalize(vec3(x, y, -1));
+	vec3 dir = rotationMatrix(vec3(0, 1, 0), theta.x) * normalize(vec3(x, y, -1));
+//	dir = rotationMatrix(cross(dir, vec3(0, 1, 0)), theta.y) * dir;
 
 	pxColour = vec4(cast_ray(pos, dir), 1.0);
 }

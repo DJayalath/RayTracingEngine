@@ -2,7 +2,7 @@
 #include <SDL2/SDL.h>
 
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <string>
 #include <iostream>
@@ -13,34 +13,116 @@
 #define W_WIDTH 1280
 #define W_HEIGHT 720
 
-#define MAP_WIDTH 5
-#define MAP_HEIGHT 5
-#define MAP_DEPTH 3
+#define MAP_WIDTH 24
+#define MAP_HEIGHT 24
+#define MAP_DEPTH 4
 
-#define MOVESPEED 0.02
-#define ROTSPEED 0.10
+#define MOVESPEED 0.02f
+#define ROTSPEED 0.1f
 
 // x -->
 // z down
-int worldMap[MAP_WIDTH * MAP_HEIGHT * MAP_DEPTH] =
+Uint32 worldMap[] =
 {
-	1, 1, 1, 1, 1,
-	1, 0, 0, 0, 1,
-	1, 0, 0, 0, 1,
-	1, 0, 0, 0, 1,
-	1, 1, 1, 1, 1,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
+  10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
 
-	1, 1, 1, 1, 1,
-	1, 0, 0, 0, 1,
-	1, 0, 0, 0, 1,
-	1, 0, 0, 0, 1,
-	1, 1, 1, 1, 1,
+  8,8,8,8,8,8,8,8,8,8,8,4,4,6,4,4,6,4,6,4,4,4,6,4,
+  8,0,0,0,0,0,0,0,0,0,8,4,0,0,0,0,0,0,0,0,0,0,0,4,
+  8,0,3,3,0,0,0,0,0,8,8,4,0,0,0,0,0,0,0,0,0,0,0,6,
+  8,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,
+  8,0,3,3,0,0,0,0,0,8,8,4,0,0,0,0,0,0,0,0,0,0,0,4,
+  8,0,0,0,0,0,0,0,0,0,8,4,0,0,0,0,0,6,6,6,0,6,4,6,
+  8,8,8,8,0,8,8,8,8,8,8,4,4,4,4,4,4,6,0,0,0,0,0,6,
+  7,7,7,7,0,7,7,7,7,0,8,0,8,0,8,0,8,4,0,4,0,6,0,6,
+  7,7,0,0,0,0,0,0,7,8,0,8,0,8,0,8,8,6,0,0,0,0,0,6,
+  7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,6,0,0,0,0,0,4,
+  7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,6,0,6,0,6,0,6,
+  7,7,0,0,0,0,0,0,7,8,0,8,0,8,0,8,8,6,4,6,0,6,6,6,
+  7,7,7,7,0,7,7,7,7,8,8,4,0,6,8,4,8,3,3,3,0,3,3,3,
+  2,2,2,2,0,2,2,2,2,4,6,4,0,0,6,0,6,3,0,0,0,0,0,3,
+  2,2,0,0,0,0,0,2,2,4,0,0,0,0,0,0,4,3,0,0,0,0,0,3,
+  2,0,0,0,0,0,0,0,2,4,0,0,0,0,0,0,4,3,0,0,0,0,0,3,
+  1,0,0,0,0,0,0,0,1,4,4,4,4,4,6,0,6,3,3,0,0,0,3,3,
+  2,0,0,0,0,0,0,0,2,2,2,1,2,2,2,6,6,0,0,5,0,5,0,5,
+  2,2,0,0,0,0,0,2,2,2,0,0,0,2,2,0,5,0,5,0,0,0,5,5,
+  2,0,0,0,0,0,0,0,2,0,0,0,0,0,2,5,0,5,0,5,0,5,0,5,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,
+  2,0,0,0,0,0,0,0,2,0,0,0,0,0,2,5,0,5,0,5,0,5,0,5,
+  2,2,0,0,0,0,0,2,2,2,0,0,0,2,2,0,5,0,5,0,0,0,5,5,
+  2,2,2,2,1,2,2,2,2,2,2,1,2,2,2,5,5,5,5,5,5,5,5,5,
 
-	1, 1, 1, 1, 1,
-	1, 0, 0, 0, 1,
-	1, 0, 0, 0, 1,
-	1, 0, 0, 0, 1,
-	1, 1, 1, 1, 1,
+  8,8,8,8,8,8,8,8,8,8,8,4,4,6,4,4,6,4,6,4,4,4,6,4,
+  8,0,0,0,0,0,0,0,0,0,8,4,0,0,0,0,0,0,0,0,0,0,0,4,
+  8,0,3,3,0,0,0,0,0,8,8,4,0,0,0,0,0,0,0,0,0,0,0,6,
+  8,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,
+  8,0,3,3,0,0,0,0,0,8,8,4,0,0,0,0,0,0,0,0,0,0,0,4,
+  8,0,0,0,0,0,0,0,0,0,8,4,0,0,0,0,0,6,6,6,0,6,4,6,
+  8,8,8,8,0,8,8,8,8,8,8,4,4,4,4,4,4,6,0,0,0,0,0,6,
+  7,7,7,7,0,7,7,7,7,0,8,0,8,0,8,0,8,4,0,4,0,6,0,6,
+  7,7,0,0,0,0,0,0,7,8,0,8,0,8,0,8,8,6,0,0,0,0,0,6,
+  7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,6,0,0,0,0,0,4,
+  7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,6,0,6,0,6,0,6,
+  7,7,0,0,0,0,0,0,7,8,0,8,0,8,0,8,8,6,4,6,0,6,6,6,
+  7,7,7,7,0,7,7,7,7,8,8,4,0,6,8,4,8,3,3,3,0,3,3,3,
+  2,2,2,2,0,2,2,2,2,4,6,4,0,0,6,0,6,3,0,0,0,0,0,3,
+  2,2,0,0,0,0,0,2,2,4,0,0,0,0,0,0,4,3,0,0,0,0,0,3,
+  2,0,0,0,0,0,0,0,2,4,0,0,0,0,0,0,4,3,0,0,0,0,0,3,
+  1,0,0,0,0,0,0,0,1,4,4,4,4,4,6,0,6,3,3,0,0,0,3,3,
+  2,0,0,0,0,0,0,0,2,2,2,1,2,2,2,6,6,0,0,5,0,5,0,5,
+  2,2,0,0,0,0,0,2,2,2,0,0,0,2,2,0,5,0,5,0,0,0,5,5,
+  2,0,0,0,0,0,0,0,2,0,0,0,0,0,2,5,0,5,0,5,0,5,0,5,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,
+  2,0,0,0,0,0,0,0,2,0,0,0,0,0,2,5,0,5,0,5,0,5,0,5,
+  2,2,0,0,0,0,0,2,2,2,0,0,0,2,2,0,5,0,5,0,0,0,5,5,
+  2,2,2,2,1,2,2,2,2,2,2,1,2,2,2,5,5,5,5,5,5,5,5,5,
+
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9
 };
 
 SDL_Window* window = nullptr;
@@ -52,7 +134,9 @@ bool m_keys[NUM_KEYS], m_mouse[NUM_MOUSE];
 float frameTime;
 double xlast;
 
-glm::fvec3 pos, dir, plane;
+glm::fvec3 pos, dir;
+glm::fmat3 rot;
+glm::fvec2 theta;
 
 struct Mouse
 {
@@ -63,6 +147,7 @@ struct Mouse
 
 unsigned int shaderID;
 
+glm::fmat3 rotationMatrix(glm::fvec3 axis, float angle);
 void CompileShaders(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr);
 void checkCompileErrors(GLuint shader, std::string type);
 
@@ -103,10 +188,12 @@ int main(int argc, char* argv[])
 
 	// ========== RAY CASTING SETUP ==========
 
-	pos = { 3, 0, 3 };
+	pos = { 6, 2, 3 };
 	dir = { 0, 0, -1 };
+	rot = rotationMatrix(glm::vec3(0, 1, 0), 0);
+	theta = glm::fvec2(0);
 
-	float fov = M_PI / 2.f;
+	float fov = M_PI / 3.f;
 
 	double time = 0; //time of current frame
 	double oldTime = 0; //time of previous frame
@@ -119,14 +206,13 @@ int main(int argc, char* argv[])
 	// Uniforms
 	int uniform_w_size = glGetUniformLocation(shaderID, "w_size");
 	int uniform_fov = glGetUniformLocation(shaderID, "fov");
-	int uniform_worldmap = glGetUniformLocation(shaderID, "world_map");
 	int uniform_pos = glGetUniformLocation(shaderID, "pos");
+	int uniform_theta = glGetUniformLocation(shaderID, "theta");
 
 	// Set static uniforms
 	glUseProgram(shaderID);
 	glUniform2i(uniform_w_size, W_WIDTH, W_HEIGHT);
 	glUniform1f(uniform_fov, fov);
-	glUniform1iv(uniform_worldmap, sizeof(worldMap), worldMap);
 
 	// ========== VERTEX SETUP ==========
 
@@ -146,7 +232,7 @@ int main(int argc, char* argv[])
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
-	//glGenBuffers(1, &SSBO);
+	glGenBuffers(1, &SSBO);
 
 	glBindVertexArray(VAO);
 
@@ -156,11 +242,11 @@ int main(int argc, char* argv[])
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-	// Add texture data to SSBO
-	//glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBO);
+	// Add map data to SSBO
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBO);
 
-	//glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(texture), texture, GL_STATIC_READ);
-	//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, SSBO);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(worldMap), worldMap, GL_STATIC_READ);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, SSBO);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
@@ -196,12 +282,12 @@ int main(int argc, char* argv[])
 			case SDL_MOUSEMOTION:
 
 			{
-				//double delta = -1 * double(event.motion.xrel) * frameTime * ROTSPEED;
-
-				//// Rotate 90 degrees
-				//glm::dmat2 rotation = { glm::dvec2(cos(delta), -sin(delta)), glm::dvec2(sin(delta), cos(delta)) };
-				//dir = dir * rotation;
-				//plane = plane * rotation;
+				float deltaX = (float) event.motion.xrel * frameTime * ROTSPEED;
+				float deltaY = (float)event.motion.yrel * frameTime * ROTSPEED;
+				theta.x += deltaX;
+				theta.y += deltaY;
+				rot = rotationMatrix(glm::vec3(0, 1, 0), deltaX);
+				dir = rot * dir;
 			}
 			break;
 			case SDL_QUIT:
@@ -229,37 +315,33 @@ int main(int argc, char* argv[])
 
 		if (m_keys[SDLK_w])
 		{
-			pos += dir * multiplier;
-
-			//if (worldMap[int(pos.x + dir.x * multiplier) + int(pos.y) * MAP_WIDTH] == false) pos.x += dir.x * multiplier;
-			//if (worldMap[int(pos.x) + int(pos.y + dir.y * multiplier) * MAP_WIDTH] == false) pos.y += dir.y * multiplier;
+			glm::vec3 projected = pos + dir * multiplier;
+			glm::ivec3 map_proj = static_cast<glm::ivec3>(projected);
+			if (worldMap[map_proj.y * MAP_WIDTH * MAP_HEIGHT + map_proj.z * MAP_WIDTH + map_proj.x] == 0)
+				pos = projected;
 		}
 		else if (m_keys[SDLK_s])
 		{
-			pos -= dir * multiplier;
-
-			//if (worldMap[int(pos.x - dir.x * multiplier) + int(pos.y) * MAP_WIDTH] == false) pos.x -= dir.x * multiplier;
-			//if (worldMap[int(pos.x) + int(pos.y - dir.y * multiplier) * MAP_WIDTH] == false) pos.y -= dir.y * multiplier;
+			glm::vec3 projected = pos - dir * multiplier;
+			glm::ivec3 map_proj = static_cast<glm::ivec3>(projected);
+			if (worldMap[map_proj.y * MAP_WIDTH * MAP_HEIGHT + map_proj.z * MAP_WIDTH + map_proj.x] == 0)
+				pos = projected;
 		}
 		if (m_keys[SDLK_a])
 		{
 			glm::vec3 perp = glm::cross(dir, glm::vec3(0, 1, 0));
-
-			pos -= perp * multiplier;
-
-			//// Apply transformation as if moving forwards
-			//if (worldMap[int(pos.x - dir.y * multiplier) + int(pos.y) * MAP_WIDTH] == false) pos.x -= dir.y * multiplier;
-			//if (worldMap[int(pos.x) + int(pos.y + dir.x * multiplier) * MAP_WIDTH] == false) pos.y += dir.x * multiplier;
+			glm::vec3 projected = pos - perp * multiplier;
+			glm::ivec3 map_proj = static_cast<glm::ivec3>(projected);
+			if (worldMap[map_proj.y * MAP_WIDTH * MAP_HEIGHT + map_proj.z * MAP_WIDTH + map_proj.x] == 0)
+				pos = projected;
 		}
 		else if (m_keys[SDLK_d])
 		{
 			glm::vec3 perp = glm::cross(dir, glm::vec3(0, 1, 0));
-
-			pos += perp * multiplier;
-
-			//// Apply transformation as if moving forwards
-			//if (worldMap[int(pos.x + dir.y * multiplier) + int(pos.y) * MAP_WIDTH] == false) pos.x += dir.y * multiplier;
-			//if (worldMap[int(pos.x) + int(pos.y - dir.x * multiplier) * MAP_WIDTH] == false) pos.y -= dir.x * multiplier;
+			glm::vec3 projected = pos + perp * multiplier;
+			glm::ivec3 map_proj = static_cast<glm::ivec3>(projected);
+			if (worldMap[map_proj.y * MAP_WIDTH * MAP_HEIGHT + map_proj.z * MAP_WIDTH + map_proj.x] == 0)
+				pos = projected;
 		}
 
 		// Activate shader and render
@@ -267,8 +349,7 @@ int main(int argc, char* argv[])
 
 		// Pass dynamic uniforms
 		glUniform3f(uniform_pos, pos.x, pos.y, pos.z);
-		//glUniform2f(uniform_dir, dir.x, dir.y);
-		//glUniform2f(uniform_plane, plane.x, plane.y);
+		glUniform2f(uniform_theta, theta.x, theta.y);
 
 		glBindVertexArray(VAO);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -295,6 +376,18 @@ int main(int argc, char* argv[])
 	SDL_Quit();
 
 	return EXIT_SUCCESS;
+}
+
+glm::fmat3 rotationMatrix(glm::fvec3 axis, float angle)
+{
+	axis = glm::normalize(axis);
+	float s = sin(angle);
+	float c = cos(angle);
+	float oc = 1.0 - c;
+
+	return glm::fmat3(oc * axis.x * axis.x + c, oc * axis.x * axis.y - axis.z * s, oc * axis.z * axis.x + axis.y * s,
+		oc * axis.x * axis.y + axis.z * s, oc * axis.y * axis.y + c, oc * axis.y * axis.z - axis.x * s,
+		oc * axis.z * axis.x - axis.y * s, oc * axis.y * axis.z + axis.x * s, oc * axis.z * axis.z + c);
 }
 
 void CompileShaders(const char* vertexPath, const char* fragmentPath, const char* geometryPath)
