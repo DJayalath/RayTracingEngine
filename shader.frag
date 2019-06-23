@@ -11,9 +11,13 @@ out vec4 pxColour;
 
 uniform ivec2 w_size;
 uniform float fov;
-//uniform int world_map[MAP_WIDTH * MAP_HEIGHT * MAP_DEPTH];
 uniform vec3 pos;
 uniform vec2 theta;
+
+struct Light {
+    vec3 position;
+    float intensity;
+};
 
 layout(std430, binding = 3) buffer dataLayout
 {
@@ -37,8 +41,6 @@ vec3 cast_ray(const vec3 origin, const vec3 dir)
 	float dist = FLT_MAX;
 	float t = 0.f; // Vector equation scalar
 
-//	vec3 dir_result = cross(dir, vec3(0, 1, 0));
-
 	while (true)
 	{
 		vec3 map = origin + t * dir;
@@ -47,9 +49,10 @@ vec3 cast_ray(const vec3 origin, const vec3 dir)
 		uint tile = world_map[result.y * MAP_WIDTH * MAP_HEIGHT + result.z * MAP_WIDTH + result.x];
 		if (tile > 0)
 		{
-//			float lambda = (map.x + origin.y * dir_result.x - map.y * dir_result.x - dir_result.y * origin.x) / (dir.x * dir_result.y - dir.y * dir_result.x);
-//			vec3 perp_interset = origin + lambda * dir;
-//			dist = length(perp_interset - origin);
+			Light l1 = Light(vec3(8, 3, 8), 0.1);
+			vec3 light_dir = normalize(l1.position - map);
+			float diffuse_intensity = l1.intensity * max(0.f, dot(light_dir,map));
+
 			dist = length(map - origin);
 			vec3 col;
 			switch(tile)
@@ -86,7 +89,7 @@ vec3 cast_ray(const vec3 origin, const vec3 dir)
 				break;
 			}
 
-			return col / dist;
+			return col * diffuse_intensity;
 		}
 
 		if (result.y >= MAP_DEPTH || result.z >= MAP_WIDTH || result.x >= MAP_HEIGHT)
