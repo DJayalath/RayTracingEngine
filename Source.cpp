@@ -3,6 +3,8 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 #include <string>
 #include <iostream>
@@ -17,11 +19,14 @@
 #define MAP_HEIGHT 24
 #define MAP_DEPTH 4
 
+#define NUM_TEXTURES 8
+#define TEX_WIDTH 64
+#define TEX_HEIGHT 64
+
 #define MOVESPEED 0.02f
 #define ROTSPEED 0.1f
 
-// x -->
-// z down
+// x -->, z down, y up
 Uint32 worldMap[] =
 {
   10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
@@ -166,7 +171,7 @@ int main(int argc, char* argv[])
 	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE, 32);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
+	//SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
 	// Create window
@@ -195,8 +200,44 @@ int main(int argc, char* argv[])
 
 	float fov = M_PI / 3.f;
 
+	// ========== TIMING ==========
+
 	double time = 0; //time of current frame
 	double oldTime = 0; //time of previous frame
+
+	// ========== TEXTURE LOADING ==========
+
+	// Texture buffer
+	uint32_t texture[NUM_TEXTURES * TEX_WIDTH * TEX_HEIGHT];
+
+	std::string texture_locs[NUM_TEXTURES] =
+	{
+		"pics/eagle.png", "pics/redbrick.png", "pics/purplestone.png",
+		"pics/greystone.png", "pics/bluestone.png", "pics/mossy.png",
+		"pics/wood.png", "pics/colorstone.png"
+	};
+
+	// Load texture images into buffer
+	for (int i = 0; i < NUM_TEXTURES; i++)
+	{
+		int width, height, channels;
+		stbi_set_flip_vertically_on_load(true);
+
+		unsigned char* image = stbi_load
+		(texture_locs[i].c_str(),
+			&width,
+			&height,
+			&channels,
+			STBI_rgb_alpha);
+
+		memcpy(&texture[i * TEX_WIDTH * TEX_HEIGHT], image, sizeof(uint32_t) * width * height);
+		stbi_image_free(image);
+	}
+
+	// Pack texture and world map data to be send as SSBO
+	Uint32 data[sizeof(texture) + sizeof(worldMap)];
+	memcpy(data, texture, sizeof(texture));
+	memcpy(&data[_countof(texture)], worldMap, sizeof(worldMap));
 
 	// ========== SHADER COMPILATION ==========
 
@@ -245,7 +286,7 @@ int main(int argc, char* argv[])
 	// Add map data to SSBO
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBO);
 
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(worldMap), worldMap, GL_STATIC_READ);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(data), data, GL_STATIC_READ);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, SSBO);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);

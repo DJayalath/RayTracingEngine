@@ -6,6 +6,10 @@
 #define MAP_HEIGHT 24
 #define MAP_DEPTH 4
 
+#define NUM_TEXTURES 8
+#define TEX_WIDTH 64
+#define TEX_HEIGHT 64
+
 in vec4 gl_FragCoord;
 out vec4 pxColour;
 
@@ -28,7 +32,8 @@ struct Material {
 
 layout(std430, binding = 3) buffer dataLayout
 {
-     uint world_map[];
+	uint textures[NUM_TEXTURES * TEX_WIDTH * TEX_HEIGHT];
+	uint world_map[];
 };
 
 mat3 rotationMatrix(vec3 axis, float angle)
@@ -50,6 +55,7 @@ vec3 cast_ray(const vec3 origin, const vec3 dir)
 	vec3 tDelta = abs(1.0 / dir);
 	vec3 tMax;
 	uint voxel;
+	int side;
 
 	if (dir.x < 0)
 	{
@@ -109,6 +115,7 @@ vec3 cast_ray(const vec3 origin, const vec3 dir)
 				if (map.x >= MAP_WIDTH || map.x < 0)
 					return vec3(0, 0, 0);
 				tMax.x += tDelta.x;
+				side = 0;
 			}
 			else
 			{
@@ -116,6 +123,7 @@ vec3 cast_ray(const vec3 origin, const vec3 dir)
 				if (map.z >= MAP_HEIGHT || map.z < 0)
 					return vec3(0, 0, 0);
 				tMax.z += tDelta.z;
+				side = 1;
 			}
 		}
 		else
@@ -126,6 +134,7 @@ vec3 cast_ray(const vec3 origin, const vec3 dir)
 				if (map.y >= MAP_DEPTH || map.y < 0)
 					return vec3(0, 0, 0);
 				tMax.y += tDelta.y;
+				side = 2;
 			}
 			else
 			{
@@ -133,20 +142,81 @@ vec3 cast_ray(const vec3 origin, const vec3 dir)
 				if (map.z >= MAP_HEIGHT || map.z < 0)
 					return vec3(0, 0, 0);
 				tMax.z += tDelta.z;
+				side = 1;
 			}
 		}
 		voxel = world_map[map.y * MAP_WIDTH * MAP_HEIGHT + map.z * MAP_WIDTH + map.x];
 	} while (voxel == 0);
 
+//	// ========== TEXTURING ==========
+//
+//	uint texNum = voxel - 1;
+//
+//	float perpWallDist;
+//
+//	if (side == 0)
+//		perpWallDist = (map.x - origin.x + (1 - stepAmount.x) / 2) / dir.x;
+//	else if (side == 1)
+//		perpWallDist = (map.z - origin.z + (1 - stepAmount.z) / 2) / dir.z;
+//
+//	int lineHeight = int(float(w_size.y) / perpWallDist);
+//
+//	float wallX;
+//	if (side == 0)
+//		wallX = origin.z + perpWallDist * dir.z;
+//	else if (side == 1)
+//		wallX = origin.x + perpWallDist * dir.x;
+//	wallX -= floor(wallX);
+//
+//	int texX = int(wallX * float(TEX_WIDTH));
+//	if (side == 0 && dir.x > 0) texX = TEX_WIDTH - texX - 1;
+//	if (side == 1 && dir.z < 0) texX = TEX_WIDTH - texX - 1;
+//
+//	int d = int(gl_FragCoord.y) * 256 - w_size.y * 128 + lineHeight * 128;
+//	int texY = int((float(d * TEX_HEIGHT) / float(lineHeight)) / 256.0);
+//
+//	uint c = textures[texNum * TEX_WIDTH * TEX_HEIGHT + texY * TEX_HEIGHT + texX];
+//	return vec3(float(c & 0xFF) / 255.f,
+//				float((c & 0xFF00) >> 8) / 255.f,
+//				float((c & 0xFF0000) >> 16) / 255.f);
+
+
+	float dist;
+	vec3 dest;
+	if (side == 0)
+	{
+		dest = origin + tMax.x * dir;
+		dist = length(dest - origin);
+	}
+	else if (side == 1)
+	{
+		dest = origin + tMax.z * dir;
+		dist = length(dest - origin);
+	}
+	else
+	{
+		dest = origin + tMax.y * dir;
+		dist = length(dest - origin);
+	}
+
+
+
 	vec3 col;
-//	float dist = length(map - origin);
 
 	Light l1 = Light(vec3(8, 3, 8), 0.1);
 
 	vec3 light_dir = normalize(l1.position - map);
 	float diffuse_intensity = l1.intensity * max(0.f, dot(light_dir,map));
 	float ambient_intensity = 0.1f;
-	float specular_intensity = 0.5f;
+
+
+//	float specular_intensity = 0.5f;
+//	vec3 viewDir = normalize(origin - map);
+//	vec3 reflectDir = reflect(map, -light_dir);
+//	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+//	float specular = specular_intensity * spec;
+
+
 
 	switch(voxel)
 	{
@@ -182,7 +252,8 @@ vec3 cast_ray(const vec3 origin, const vec3 dir)
 		break;
 	}
 
-	return col * (diffuse_intensity + ambient_intensity);
+	//return col * (diffuse_intensity + ambient_intensity);
+	return col * (1.0 / dist);
 
 //	while (true)
 //	{
