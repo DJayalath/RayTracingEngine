@@ -185,19 +185,21 @@ vec3 cast_ray(const vec3 origin, const vec3 dir)
 	vec3 dest;
 	if (side == 0)
 	{
-		dest = origin + tMax.x * dir;
-		dist = length(dest - origin);
+//		dest = origin + tMax.x * dir;
+		dist = (map.x - origin.x + (1 - stepAmount.x) / 2) / dir.x;
 	}
 	else if (side == 1)
 	{
-		dest = origin + tMax.z * dir;
-		dist = length(dest - origin);
+//		dest = origin + tMax.z * dir;
+		dist =(map.z - origin.z + (1 - stepAmount.z) / 2) / dir.z;
 	}
 	else
 	{
-		dest = origin + tMax.y * dir;
-		dist = length(dest - origin);
+//		dest = origin + tMax.y * dir;
+		dist = (map.y - origin.y + (1 - stepAmount.y) / 2) / dir.y;
 	}
+
+	dest = origin + dist * dir;
 
 
 
@@ -205,8 +207,8 @@ vec3 cast_ray(const vec3 origin, const vec3 dir)
 
 	Light l1 = Light(vec3(8, 3, 8), 0.1);
 
-	vec3 light_dir = normalize(l1.position - map);
-	float diffuse_intensity = l1.intensity * max(0.f, dot(light_dir,map));
+	vec3 light_dir = normalize(l1.position - dest);
+	float diffuse_intensity = l1.intensity * max(0.f, dot(light_dir,dest));
 	float ambient_intensity = 0.1f;
 
 
@@ -252,8 +254,8 @@ vec3 cast_ray(const vec3 origin, const vec3 dir)
 		break;
 	}
 
-	//return col * (diffuse_intensity + ambient_intensity);
-	return col * (1.0 / dist);
+	return col * (diffuse_intensity + ambient_intensity);
+	//return col * (1.0 / dist);
 
 //	while (true)
 //	{
